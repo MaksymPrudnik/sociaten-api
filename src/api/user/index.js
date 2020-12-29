@@ -41,14 +41,14 @@ router.get('/', token({ required: true, roles: ['admin'] }), query(), index)
 router.get('/me', token({ required: true }), showMe)
 
 /**
- * @api {get} /users/:id Retrieve user
+ * @api {get} /users/:username Retrieve user
  * @apiName RetrieveUser
  * @apiGroup User
  * @apiPermission public
  * @apiSuccess {Object} user User's data.
  * @apiError 404 User not found.
  */
-router.get('/:id', show)
+router.get('/:username', show)
 
 /**
  * @api {post} /users Create user
