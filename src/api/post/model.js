@@ -1,43 +1,92 @@
 import mongoose, { Schema } from 'mongoose'
 
-const postSchema = new Schema({
-  author: {
-    type: Schema.ObjectId,
-    ref: 'User',
-    required: true
+const postSchema = new Schema(
+  {
+    author: {
+      type: Schema.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    title: {
+      type: String,
+      required: true
+    },
+    text: {
+      type: String,
+      required: true
+    },
+    media: {
+      type: [String],
+      validate: {
+        validator: function (v) {
+          return v.length < 5
+        },
+        message: 'One post can contain no more then 5 media items'
+      }
+    },
+    likes: {
+      type: [String]
+    }
   },
-  title: {
-    type: String
-  },
-  text: {
-    type: String
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform: (obj, ret) => {
+        delete ret._id
+      }
+    }
   }
-}, {
-  timestamps: true,
-  toJSON: {
-    virtuals: true,
-    transform: (obj, ret) => { delete ret._id }
-  }
+)
+
+postSchema.virtual('likesCount').get(function () {
+  return this.likes.length
 })
 
 postSchema.methods = {
-  view (full) {
-    const view = {
-      // simple view
-      id: this.id,
-      author: this.author.view(full),
-      title: this.title,
-      text: this.text,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt
+  view(full) {
+    let fields = [
+      'id',
+      'author',
+      'title',
+      'text',
+      'media',
+      'likesCount',
+      'createdAt',
+      'updatedAt'
+    ]
+    const view = {}
+
+    if (full) {
+      fields = [...fields, 'likes']
     }
 
-    return full ? {
-      ...view
-      // add properties for a full view
-    } : view
+    fields.forEach((field) => {
+      view[field] = this[field]
+    })
+
+    return view
+  },
+
+  like(id) {
+    if (this.likes.includes(id)) {
+      this.likes = this.likes.filter((like) => like !== id)
+    } else {
+      this.likes.addToSet(id)
+    }
+    return this.save()
   }
 }
+
+postSchema.pre(/^find/, function (next) {
+  this.populate([
+    {
+      path: 'author',
+      select: 'id picture username'
+    }
+  ])
+  next()
+})
 
 const model = mongoose.model('Post', postSchema)
 

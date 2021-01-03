@@ -1,8 +1,8 @@
 import { success, notFound, authorOrAdmin } from '../../services/response/'
 import { Post } from '.'
 
-export const create = ({ user, bodymen: { body } }, res, next) =>
-  Post.create({ ...body, author: user })
+export const create = ({ user: { id }, bodymen: { body } }, res, next) =>
+  Post.create({ ...body, author: id })
     .then((post) => post.view(true))
     .then(success(res, 201))
     .catch(next)
