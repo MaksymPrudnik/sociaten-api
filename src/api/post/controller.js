@@ -38,6 +38,13 @@ export const update = ({ user, bodymen: { body }, params }, res, next) =>
     .then(success(res))
     .catch(next)
 
+export const like = ({ user, params: { id } }, res, next) =>
+  Post.findById(id)
+    .then(notFound(res))
+    .then((post) => (post ? post.like(user.id) : null))
+    .then(success(res))
+    .catch(next)
+
 export const destroy = ({ user, params }, res, next) =>
   Post.findById(params.id)
     .then(notFound(res))

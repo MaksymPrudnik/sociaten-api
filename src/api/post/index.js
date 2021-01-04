@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { middleware as query } from 'querymen'
 import { middleware as body } from 'bodymen'
 import { token } from '../../services/passport'
-import { create, index, show, update, destroy } from './controller'
+import { create, index, show, update, destroy, like } from './controller'
 import { schema } from './model'
 export Post, { schema } from './model'
 
@@ -22,10 +22,7 @@ const { title, text } = schema.tree
  * @apiError 404 Post not found.
  * @apiError 401 user access only.
  */
-router.post('/',
-  token({ required: true }),
-  body({ title, text }),
-  create)
+router.post('/', token({ required: true }), body({ title, text }), create)
 
 /**
  * @api {get} /posts Retrieve posts
@@ -36,9 +33,7 @@ router.post('/',
  * @apiSuccess {Object[]} rows List of posts.
  * @apiError {Object} 400 Some parameters may contain invalid values.
  */
-router.get('/',
-  query(),
-  index)
+router.get('/', query(), index)
 
 /**
  * @api {get} /posts/:id Retrieve post
@@ -51,9 +46,7 @@ router.get('/',
  * @apiError 404 Post not found.
  * @apiError 401 user access only.
  */
-router.get('/:id',
-  token({ required: true }),
-  show)
+router.get('/:id', token({ required: true }), show)
 
 /**
  * @api {put} /posts/:id Update post
@@ -68,10 +61,22 @@ router.get('/:id',
  * @apiError 404 Post not found.
  * @apiError 401 user access only.
  */
-router.put('/:id',
-  token({ required: true }),
-  body({ title, text }),
-  update)
+router.put('/:id', token({ required: true }), body({ title, text }), update)
+
+/**
+ * @api {put} /posts/:id Update post
+ * @apiName UpdatePost
+ * @apiGroup Post
+ * @apiPermission user
+ * @apiParam {String} access_token user access token.
+ * @apiParam title Post's title.
+ * @apiParam text Post's text.
+ * @apiSuccess {Object} post Post's data.
+ * @apiError {Object} 400 Some parameters may contain invalid values.
+ * @apiError 404 Post not found.
+ * @apiError 401 user access only.
+ */
+router.put('/:id/like', token({ required: true }), like)
 
 /**
  * @api {delete} /posts/:id Delete post
@@ -83,8 +88,6 @@ router.put('/:id',
  * @apiError 404 Post not found.
  * @apiError 401 user access only.
  */
-router.delete('/:id',
-  token({ required: true }),
-  destroy)
+router.delete('/:id', token({ required: true }), destroy)
 
 export default router

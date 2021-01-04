@@ -40,7 +40,17 @@ const postSchema = new Schema(
 )
 
 postSchema.virtual('likesCount').get(function () {
-  return this.likes.length
+  return this.likes?.length
+})
+
+postSchema.virtual('comments', {
+  ref: 'Comment',
+  foreignField: 'document',
+  localField: '_id'
+})
+
+postSchema.virtual('commentsCount').get(function () {
+  return this.comments?.length
 })
 
 postSchema.methods = {
@@ -51,6 +61,8 @@ postSchema.methods = {
       'title',
       'text',
       'media',
+      'comments',
+      'commentsCount',
       'likesCount',
       'createdAt',
       'updatedAt'
@@ -83,6 +95,10 @@ postSchema.pre(/^find/, function (next) {
     {
       path: 'author',
       select: 'id picture username'
+    },
+    {
+      path: 'comments',
+      select: 'id author text createdAt'
     }
   ])
   next()
