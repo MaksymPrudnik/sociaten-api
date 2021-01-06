@@ -54,7 +54,7 @@ postSchema.virtual('commentsCount').get(function () {
 })
 
 postSchema.methods = {
-  view(full) {
+  view(full, id) {
     let fields = [
       'id',
       'author',
@@ -77,7 +77,10 @@ postSchema.methods = {
       view[field] = this[field]
     })
 
-    return view
+    return {
+      ...view,
+      isLiked: this.isLiked(id)
+    }
   },
 
   like(id) {
@@ -87,6 +90,9 @@ postSchema.methods = {
       this.likes.addToSet(id)
     }
     return this.save()
+  },
+  isLiked(id) {
+    return this.likes.includes(id)
   }
 }
 

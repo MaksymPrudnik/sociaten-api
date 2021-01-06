@@ -36,6 +36,17 @@ router.post('/', token({ required: true }), body({ title, text }), create)
 router.get('/', query(), index)
 
 /**
+ * @api {get} /posts/feed Retrieve feed
+ * @apiName RetrieveFeed
+ * @apiGroup Post
+ * @apiUse listParams
+ * @apiSuccess {Number} count Total amount of posts.
+ * @apiSuccess {Object[]} rows List of posts.
+ * @apiError {Object} 400 Some parameters may contain invalid values.
+ */
+router.get('/feed', token({ required: true }), query(), index)
+
+/**
  * @api {get} /posts/:id Retrieve post
  * @apiName RetrievePost
  * @apiGroup Post
