@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { middleware as query } from 'querymen'
 import { middleware as body } from 'bodymen'
 import { token } from '../../services/passport'
-import { create, index, show, update, destroy, like } from './controller'
+import { create, index, show, update, destroy, like, feed } from './controller'
 import { schema } from './model'
 export Post, { schema } from './model'
 
@@ -44,7 +44,7 @@ router.get('/', query(), index)
  * @apiSuccess {Object[]} rows List of posts.
  * @apiError {Object} 400 Some parameters may contain invalid values.
  */
-router.get('/feed', token({ required: true }), query(), index)
+router.get('/feed', token({ required: true }), query(), feed)
 
 /**
  * @api {get} /posts/:id Retrieve post
