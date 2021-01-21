@@ -33,7 +33,16 @@ router.post('/', token({ required: true }), body({ title, text }), create)
  * @apiSuccess {Object[]} rows List of posts.
  * @apiError {Object} 400 Some parameters may contain invalid values.
  */
-router.get('/', query(), index)
+router.get(
+  '/',
+  query({
+    user: {
+      type: String,
+      path: ['author']
+    }
+  }),
+  index
+)
 
 /**
  * @api {get} /posts/feed Retrieve feed
