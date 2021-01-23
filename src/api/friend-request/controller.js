@@ -1,11 +1,32 @@
 import { success, notFound, authorOrAdmin } from '../../services/response/'
-import { FriendRequest } from '.'
+import FriendRequest from './model'
+import createError from 'http-errors'
 
-export const create = ({ user, params: { receiver } }, res, next) =>
-  FriendRequest.create({ receiver, author: user.id })
-    .then((friendRequest) => friendRequest.view(true))
-    .then(success(res, 201))
-    .catch(next)
+export const create = async ({ user, params: { receiver } }, res, next) => {
+  try {
+    const isRequestExist = !!(await FriendRequest.findOne({
+      author: user.id,
+      receiver
+    }))
+    if (isRequestExist) {
+      throw createError(400, 'Such friend request already exist')
+    }
+
+    const isReceiverExist = !!(await FriendRequest.findById(receiver))
+    if (!isReceiverExist) {
+      createError(400, 'Requested user does not exist')
+    }
+
+    const friendRequest = await FriendRequest.create({
+      receiver,
+      author: user.id
+    })
+
+    return res.status(201).json(friendRequest.view(true))
+  } catch (error) {
+    return next(error)
+  }
+}
 
 export const index = ({ querymen: { query, select, cursor } }, res, next) =>
   FriendRequest.count(query)

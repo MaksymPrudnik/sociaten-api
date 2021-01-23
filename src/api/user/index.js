@@ -9,7 +9,9 @@ import {
   create,
   update,
   updatePassword,
-  destroy
+  destroy,
+  addFriend,
+  removeFriend
 } from './controller'
 import { schema } from './model'
 export User, { schema } from './model'
@@ -31,16 +33,6 @@ const { email, password, username, picture, role } = schema.tree
 router.get('/', token({ required: true, roles: ['admin'] }), query(), index)
 
 /**
- * @api {get} /users/me Retrieve current user
- * @apiName RetrieveCurrentUser
- * @apiGroup User
- * @apiPermission user
- * @apiParam {String} access_token User access_token.
- * @apiSuccess {Object} user User's data.
- */
-router.get('/me', token({ required: true }), showMe)
-
-/**
  * @api {get} /users/:username Retrieve user
  * @apiName RetrieveUser
  * @apiGroup User
@@ -48,7 +40,7 @@ router.get('/me', token({ required: true }), showMe)
  * @apiSuccess {Object} user User's data.
  * @apiError 404 User not found.
  */
-router.get('/:username', show)
+router.get('/:username', token({ required: true }), show)
 
 /**
  * @api {post} /users Create user
@@ -98,6 +90,28 @@ router.put(
  * @apiError 404 User not found.
  */
 router.put('/:id/password', passwordAuth(), body({ password }), updatePassword)
+
+/**
+ * @api {put} /users/add-friend/:id Add friend
+ * @apiName AddFriend
+ * @apiGroup User
+ * @apiParam {String} access_token User access_token.
+ * @apiSuccess (Success 200) {Object} user User's data.
+ * @apiError {Object} 400 Some parameters may contain invalid values.
+ * @apiError 401 Current user access only.
+ */
+router.put('/add-friend/:id', token({ required: true }), addFriend)
+
+/**
+ * @api {put} /users/remove-friend/:id Remove friend
+ * @apiName RemoveFriend
+ * @apiGroup User
+ * @apiParam {String} access_token User access_token.
+ * @apiSuccess (Success 200) {Object} user User's data.
+ * @apiError {Object} 400 Some parameters may contain invalid values.
+ * @apiError 401 Current user access only.
+ */
+router.put('/remove-friend/:id', token({ required: true }), removeFriend)
 
 /**
  * @api {delete} /users/:id Delete user

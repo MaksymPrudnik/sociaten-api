@@ -1,6 +1,7 @@
 import { success, notFound } from '../../services/response/'
 import { User } from '.'
 import { sign } from '../../services/jwt'
+import FriendRequest from '../friend-request/model'
 import createError from 'http-errors'
 
 export const index = ({ querymen: { query, select, cursor } }, res, next) =>
@@ -14,14 +15,12 @@ export const index = ({ querymen: { query, select, cursor } }, res, next) =>
     .then(success(res))
     .catch(next)
 
-export const show = ({ params: { username } }, res, next) =>
-  User.findOne({ username })
+export const show = ({ user, params: { username } }, res, next) =>
+  User.findOne({ username: username === 'me' ? user.username : username })
     .then(notFound(res))
-    .then((user) => (user ? user.view() : null))
+    .then((user) => (user ? user.view(username === 'me', user.id) : null))
     .then(success(res))
     .catch(next)
-
-export const showMe = ({ user }, res) => res.json(user.view(true))
 
 export const create = ({ bodymen: { body } }, res, next) =>
   User.create(body)
@@ -90,25 +89,32 @@ export const updatePassword = (
     .then(success(res))
     .catch(next)
 
-export const makeFriendRequest = async ({ user, params }, res, next) => {
+export const addFriend = async ({ user, params }, res, next) => {
   try {
-    const requestReceiver = await User.findById(params.id)
-    if (!requestReceiver) {
-      throw createError(400, 'Requested user not found')
+    const friendRequest = await FriendRequest.findById(params.id)
+    if (!friendRequest) {
+      throw createError(400, 'Friendship request not found')
     }
 
-    const isMade = await user.makeFriendRequest(params.id)
-    const isReceived = await requestReceiver.receiveFriendRequest(id)
-
-    if (!isMade || !isReceived) {
-      await user.manageMadeRequest(params.id, false)
-      await requestReceiver.manageReceivedRequest(user.id, false)
-      throw createError(500, 'Error making request')
+    const isAdded = user.addFriend(friendRequest.receiver.id)
+    if (!isAdded) {
+      throw createError(500, 'Error adding friend')
     }
+
+    await friendRequest.remove()
+    return res.status(200).json(user.view(true))
   } catch (error) {
     return next(error)
   }
 }
+
+export const removeFriend = ({ user, params }, res, next) =>
+  user
+    .removeFriend(params.id)
+    .then(notFound(res))
+    .then((isSuccessful) => (isSuccessful ? user.view(true) : null))
+    .then(success(res))
+    .catch(next)
 
 export const destroy = ({ params }, res, next) =>
   User.findById(params.id)

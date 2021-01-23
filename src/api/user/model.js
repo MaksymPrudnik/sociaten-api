@@ -16,17 +16,6 @@ const userRefSchema = new Schema(
   }
 )
 
-const requestsSchema = new Schema(
-  {
-    received: [userRefSchema],
-    made: [userRefSchema]
-  },
-  {
-    _id: false,
-    autoIndex: false
-  }
-)
-
 const userSchema = new Schema(
   {
     email: {
@@ -67,13 +56,24 @@ const userSchema = new Schema(
       default:
         'https://images.unsplash.com/photo-1528722828814-77b9b83aafb2?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=1500&q=80'
     },
-    requests: requestsSchema,
     friends: [userRefSchema]
   },
   {
     timestamps: true
   }
 )
+
+userSchema.virtual('madeRequests', {
+  ref: 'FriendRequest',
+  localField: 'author',
+  foreignField: '_id'
+})
+
+userSchema.virtual('receivedRequests', {
+  ref: 'FriendRequest',
+  localField: 'receiver',
+  foreignField: '_id'
+})
 
 userSchema.path('email').set(function (email) {
   if (!this.picture || this.picture.indexOf('https://gravatar.com') === 0) {
@@ -87,7 +87,6 @@ userSchema.path('email').set(function (email) {
 userSchema.pre('save', function (next) {
   if (!this.isModified('password')) return next()
 
-  /* istanbul ignore next */
   const rounds = env === 'test' ? 1 : 9
 
   bcrypt
@@ -99,10 +98,30 @@ userSchema.pre('save', function (next) {
     .catch(next)
 })
 
+userSchema.pre(/^find/, function (next) {
+  this.populate([
+    {
+      path: 'madeRequests'
+    },
+    {
+      path: 'receivedRequests'
+    }
+  ])
+
+  next()
+})
+
 userSchema.methods = {
-  view(full) {
+  view(full, id) {
     const view = {}
-    let fields = ['id', 'username', 'picture', 'wallpapper', 'createdAt']
+    let fields = [
+      'id',
+      'username',
+      'picture',
+      'wallpapper',
+      'friends',
+      'createdAt'
+    ]
 
     if (full) {
       fields = [...fields, 'email']
@@ -112,6 +131,27 @@ userSchema.methods = {
       view[field] = this[field]
     })
 
+    view.isMe = this._id.toString() === id
+    if (!view.isMe) {
+      view.relationship = this.friends.includes(id) ? 'friends' : null
+
+      if (!view.relationship) {
+        this.madeRequests.forEach(({ receiver }) => {
+          if (receiver.toString() === id) {
+            view.relationship = 'requested'
+          }
+        })
+      }
+
+      if (!view.relationship) {
+        this.receivedRequests.forEach(({ author }) => {
+          if (author.toString() === id) {
+            view.relationship = 'received'
+          }
+        })
+      }
+    }
+
     return view
   },
 
@@ -120,62 +160,21 @@ userSchema.methods = {
     return valid ? this : false
   },
 
-  async makeFriendRequest(id) {
-    const isSuccessful = !!this.requests.made.addToSet(id).length
+  async addFriend(id) {
+    const isAdded = !!this.friends.addToSet(id).length
 
     await this.save()
 
-    return isSuccessful
-  },
-
-  async receiveFriendRequest(id) {
-    const isSuccessful = !!this.requests.received.addToSet(id).length
-
-    await this.save()
-
-    return isSuccessful
-  },
-
-  async manageReceivedRequest(id, shouldAccept) {
-    if (!this.requests.received.includes(id)) {
-      return false
-    }
-
-    this.requests.received = this.requests.received.filter(
-      (request) => request !== id
-    )
-    if (shouldAccept) {
-      this.friends.addToSet(id)
-    }
-
-    await this.save()
-
-    return true
-  },
-
-  async manageMadeRequest(id, isAccepted) {
-    if (!this.requests.made.includes(id)) {
-      return false
-    }
-
-    this.requests.received = this.requests.made.filter(
-      (request) => request !== id
-    )
-    if (isAccepted) {
-      this.friends.addToSet(id)
-    }
-
-    await this.save()
-
-    return true
+    return isAdded
   },
 
   async removeFriend(id) {
-    if (!this.friends.includes(id)) {
+    if (!this.friend.includes(id)) {
       return false
     }
 
     this.friends = this.friends.filter((friend) => friend !== id)
+
     await this.save()
 
     return true
