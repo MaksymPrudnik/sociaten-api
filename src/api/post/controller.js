@@ -1,5 +1,7 @@
 import { success, notFound, authorOrAdmin } from '../../services/response/'
 import { Post } from '.'
+import createError from 'http-errors'
+import User from '../user/model'
 
 export const create = ({ user: { id }, bodymen: { body } }, res, next) =>
   Post.create({ ...body, author: id })
@@ -36,6 +38,36 @@ export const feed = (
     )
     .then(success(res))
     .catch(next)
+
+export const feedByAuthor = async (
+  { user: { id }, params: { username } },
+  res,
+  next
+) => {
+  try {
+    let profile
+    if (username !== 'me') {
+      profile = await User.findOne({ username })
+    } else {
+      profile.id = id
+    }
+
+    if (!profile) {
+      throw createError(400, 'User not found')
+    }
+
+    const count = await Post.countDocuments({ author: profile.id })
+    if (!count) {
+      return res.status(200).json({ count, rows: [] })
+    }
+    const posts = await Post.find({ author: profile.id })
+    const rows = posts.map((post) => post.view(false, profile.id))
+
+    return res.status(200).json({ count, rows })
+  } catch (error) {
+    return next(error)
+  }
+}
 
 export const show = ({ user: { id }, params }, res, next) =>
   Post.findById(params.id)

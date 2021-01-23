@@ -1,6 +1,7 @@
 import { success, notFound } from '../../services/response/'
 import { User } from '.'
 import { sign } from '../../services/jwt'
+import createError from 'http-errors'
 
 export const index = ({ querymen: { query, select, cursor } }, res, next) =>
   User.count(query)
@@ -30,7 +31,6 @@ export const create = ({ bodymen: { body } }, res, next) =>
         .then(success(res, 201))
     })
     .catch((err) => {
-      /* istanbul ignore else */
       if (err.name === 'MongoError' && err.code === 11000) {
         res.status(409).json({
           valid: false,
@@ -89,6 +89,26 @@ export const updatePassword = (
     .then((user) => (user ? user.view(true) : null))
     .then(success(res))
     .catch(next)
+
+export const makeFriendRequest = async ({ user, params }, res, next) => {
+  try {
+    const requestReceiver = await User.findById(params.id)
+    if (!requestReceiver) {
+      throw createError(400, 'Requested user not found')
+    }
+
+    const isMade = await user.makeFriendRequest(params.id)
+    const isReceived = await requestReceiver.receiveFriendRequest(id)
+
+    if (!isMade || !isReceived) {
+      await user.manageMadeRequest(params.id, false)
+      await requestReceiver.manageReceivedRequest(user.id, false)
+      throw createError(500, 'Error making request')
+    }
+  } catch (error) {
+    return next(error)
+  }
+}
 
 export const destroy = ({ params }, res, next) =>
   User.findById(params.id)

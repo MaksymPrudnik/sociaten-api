@@ -6,6 +6,27 @@ import { env } from '../../config'
 
 const roles = ['user', 'admin']
 
+const userRefSchema = new Schema(
+  {
+    type: Schema.ObjectId
+  },
+  {
+    _id: false,
+    autoIndex: false
+  }
+)
+
+const requestsSchema = new Schema(
+  {
+    received: [userRefSchema],
+    made: [userRefSchema]
+  },
+  {
+    _id: false,
+    autoIndex: false
+  }
+)
+
 const userSchema = new Schema(
   {
     email: {
@@ -45,7 +66,9 @@ const userSchema = new Schema(
       required: true,
       default:
         'https://images.unsplash.com/photo-1528722828814-77b9b83aafb2?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=1500&q=80'
-    }
+    },
+    requests: requestsSchema,
+    friends: [userRefSchema]
   },
   {
     timestamps: true
@@ -92,10 +115,70 @@ userSchema.methods = {
     return view
   },
 
-  authenticate(password) {
-    return bcrypt
-      .compare(password, this.password)
-      .then((valid) => (valid ? this : false))
+  async authenticate(password) {
+    const valid = await bcrypt.compare(password, this.password)
+    return valid ? this : false
+  },
+
+  async makeFriendRequest(id) {
+    const isSuccessful = !!this.requests.made.addToSet(id).length
+
+    await this.save()
+
+    return isSuccessful
+  },
+
+  async receiveFriendRequest(id) {
+    const isSuccessful = !!this.requests.received.addToSet(id).length
+
+    await this.save()
+
+    return isSuccessful
+  },
+
+  async manageReceivedRequest(id, shouldAccept) {
+    if (!this.requests.received.includes(id)) {
+      return false
+    }
+
+    this.requests.received = this.requests.received.filter(
+      (request) => request !== id
+    )
+    if (shouldAccept) {
+      this.friends.addToSet(id)
+    }
+
+    await this.save()
+
+    return true
+  },
+
+  async manageMadeRequest(id, isAccepted) {
+    if (!this.requests.made.includes(id)) {
+      return false
+    }
+
+    this.requests.received = this.requests.made.filter(
+      (request) => request !== id
+    )
+    if (isAccepted) {
+      this.friends.addToSet(id)
+    }
+
+    await this.save()
+
+    return true
+  },
+
+  async removeFriend(id) {
+    if (!this.friends.includes(id)) {
+      return false
+    }
+
+    this.friends = this.friends.filter((friend) => friend !== id)
+    await this.save()
+
+    return true
   }
 }
 

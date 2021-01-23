@@ -2,7 +2,16 @@ import { Router } from 'express'
 import { middleware as query } from 'querymen'
 import { middleware as body } from 'bodymen'
 import { token } from '../../services/passport'
-import { create, index, show, update, destroy, like, feed } from './controller'
+import {
+  create,
+  index,
+  show,
+  update,
+  destroy,
+  like,
+  feed,
+  feedByAuthor
+} from './controller'
 import { schema } from './model'
 export Post, { schema } from './model'
 
@@ -33,16 +42,7 @@ router.post('/', token({ required: true }), body({ title, text }), create)
  * @apiSuccess {Object[]} rows List of posts.
  * @apiError {Object} 400 Some parameters may contain invalid values.
  */
-router.get(
-  '/',
-  query({
-    user: {
-      type: String,
-      path: ['author']
-    }
-  }),
-  index
-)
+router.get('/', query(), index)
 
 /**
  * @api {get} /posts/feed Retrieve feed
@@ -54,6 +54,17 @@ router.get(
  * @apiError {Object} 400 Some parameters may contain invalid values.
  */
 router.get('/feed', token({ required: true }), query(), feed)
+
+/**
+ * @api {get} /posts/feed/:username Retrieve feed by author
+ * @apiName RetrieveFeedByAuthor
+ * @apiGroup Post
+ * @apiUse listParams
+ * @apiSuccess {Number} count Total amount of posts.
+ * @apiSuccess {Object[]} rows List of posts.
+ * @apiError {Object} 400 Some parameters may contain invalid values.
+ */
+router.get('/feed/:username', token({ required: true }), query(), feedByAuthor)
 
 /**
  * @api {get} /posts/:id Retrieve post
