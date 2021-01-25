@@ -18,7 +18,11 @@ export const index = ({ querymen: { query, select, cursor } }, res, next) =>
 export const show = ({ user, params: { username } }, res, next) =>
   User.findOne({ username: username === 'me' ? user.username : username })
     .then(notFound(res))
-    .then((user) => (user ? user.view(username === 'me', user.id) : null))
+    .then((user) =>
+      user
+        ? user.view(username === 'me', username === 'me' ? user.id : null)
+        : null
+    )
     .then(success(res))
     .catch(next)
 

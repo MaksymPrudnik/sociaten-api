@@ -1,5 +1,5 @@
 import { success, notFound, authorOrAdmin } from '../../services/response/'
-import { Post } from '.'
+import Post from './model'
 import createError from 'http-errors'
 import User from '../user/model'
 
@@ -41,7 +41,7 @@ export const feedByAuthor = async (
   next
 ) => {
   try {
-    let profile
+    let profile = {}
     if (username !== 'me') {
       profile = await User.findOne({ username })
     } else {
@@ -56,7 +56,11 @@ export const feedByAuthor = async (
     if (!count) {
       return res.status(200).json({ count, rows: [] })
     }
-    const posts = await Post.find({ author: profile.id })
+    const posts = await Post.find(
+      { author: profile.id },
+      {},
+      { sort: '-createdAt' }
+    )
     const rows = posts.map((post) => post.view(false, profile.id))
 
     return res.status(200).json({ count, rows })

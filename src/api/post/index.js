@@ -13,7 +13,6 @@ import {
   feedByAuthor
 } from './controller'
 import { schema } from './model'
-export Post, { schema } from './model'
 
 const router = new Router()
 const { title, text } = schema.tree
