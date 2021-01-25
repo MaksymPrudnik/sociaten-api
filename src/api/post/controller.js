@@ -12,12 +12,10 @@ export const create = ({ user: { id }, bodymen: { body } }, res, next) =>
 export const index = ({ querymen: { query, select, cursor } }, res, next) =>
   Post.countDocuments(query)
     .then((count) =>
-      Post.find(query, select, cursor)
-        .populate('author')
-        .then((posts) => ({
-          count,
-          rows: posts.map((post) => post.view())
-        }))
+      Post.find(query, select, cursor).then((posts) => ({
+        count,
+        rows: posts.map((post) => post.view())
+      }))
     )
     .then(success(res))
     .catch(next)
@@ -29,12 +27,10 @@ export const feed = (
 ) =>
   Post.countDocuments(query)
     .then((count) =>
-      Post.find(query, select, cursor)
-        .populate('author')
-        .then((posts) => ({
-          count,
-          rows: posts.map((post) => post.view(false, id))
-        }))
+      Post.find(query, select, cursor).then((posts) => ({
+        count,
+        rows: posts.map((post) => post.view(false, id))
+      }))
     )
     .then(success(res))
     .catch(next)
@@ -71,7 +67,6 @@ export const feedByAuthor = async (
 
 export const show = ({ user: { id }, params }, res, next) =>
   Post.findById(params.id)
-    .populate('author')
     .then(notFound(res))
     .then((post) => (post ? post.view(false, id) : null))
     .then(success(res))
@@ -79,7 +74,6 @@ export const show = ({ user: { id }, params }, res, next) =>
 
 export const update = ({ user, bodymen: { body }, params }, res, next) =>
   Post.findById(params.id)
-    .populate('author')
     .then(notFound(res))
     .then(authorOrAdmin(res, user, 'author'))
     .then((post) => (post ? Object.assign(post, body).save() : null))

@@ -104,7 +104,8 @@ postSchema.pre(/^find/, function (next) {
     },
     {
       path: 'comments',
-      select: 'id author text createdAt'
+      select: 'id author text createdAt',
+      options: { sort: '-createdAt'}
     }
   ])
   next()
