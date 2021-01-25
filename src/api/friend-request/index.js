@@ -13,7 +13,7 @@ import {
 const router = new Router()
 
 /**
- * @api {post} /friend-requests Create friend request
+ * @api {post} /friend-requests/:receiver Create friend request
  * @apiName CreateFriendRequest
  * @apiGroup FriendRequest
  * @apiPermission user

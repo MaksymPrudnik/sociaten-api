@@ -45,7 +45,12 @@ friendRequestSchema.methods = {
 }
 
 friendRequestSchema.pre(/^find/, function (next) {
-  this.populate([{ path: 'author' }, { path: 'receiver' }])
+  this.populate([
+    { path: 'author', select: 'id username picture' },
+    { path: 'receiver', select: 'id username picture' }
+  ])
+
+  next()
 })
 
 const model = mongoose.model('FriendRequest', friendRequestSchema)

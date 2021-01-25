@@ -1,9 +1,16 @@
 import { success, notFound, authorOrAdmin } from '../../services/response/'
 import FriendRequest from './model'
+import User from '../user/model'
 import createError from 'http-errors'
 
 export const create = async ({ user, params: { receiver } }, res, next) => {
   try {
+    const receiverUser = await User.findById(receiver)
+    if (!receiverUser) {
+      createError(400, 'Requested user does not exist')
+    }
+
+    console.log('user', receiverUser)
     const isRequestExist = !!(await FriendRequest.findOne({
       author: user.id,
       receiver
@@ -12,17 +19,15 @@ export const create = async ({ user, params: { receiver } }, res, next) => {
       throw createError(400, 'Such friend request already exist')
     }
 
-    const isReceiverExist = !!(await FriendRequest.findById(receiver))
-    if (!isReceiverExist) {
-      createError(400, 'Requested user does not exist')
-    }
-
     const friendRequest = await FriendRequest.create({
       receiver,
       author: user.id
     })
 
-    return res.status(201).json(friendRequest.view(true))
+    return res.status(201).json({
+      ...friendRequest.view(true),
+      receiverUsername: receiverUser.username
+    })
   } catch (error) {
     return next(error)
   }

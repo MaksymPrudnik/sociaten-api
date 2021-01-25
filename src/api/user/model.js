@@ -136,17 +136,19 @@ userSchema.methods = {
       view.relationship = this.friends.includes(id) ? 'friends' : null
 
       if (!view.relationship) {
-        this.madeRequests.forEach(({ receiver }) => {
+        this.madeRequests.forEach(({ id, receiver }) => {
           if (receiver.toString() === id) {
             view.relationship = 'requested'
+            view.requestId = id
           }
         })
       }
 
       if (!view.relationship) {
-        this.receivedRequests.forEach(({ author }) => {
+        this.receivedRequests.forEach(({ id, author }) => {
           if (author.toString() === id) {
             view.relationship = 'received'
+            view.requestId = id
           }
         })
       }
