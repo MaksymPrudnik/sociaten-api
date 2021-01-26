@@ -34,6 +34,7 @@ const userSchema = new Schema(
     username: {
       type: String,
       index: true,
+      unique: true,
       trim: true,
       required: true
     },
@@ -65,14 +66,14 @@ const userSchema = new Schema(
 
 userSchema.virtual('madeRequests', {
   ref: 'FriendRequest',
-  localField: 'author',
-  foreignField: '_id'
+  localField: '_id',
+  foreignField: 'author'
 })
 
 userSchema.virtual('receivedRequests', {
   ref: 'FriendRequest',
-  localField: 'receiver',
-  foreignField: '_id'
+  localField: '_id',
+  foreignField: 'receiver'
 })
 
 userSchema.path('email').set(function (email) {
@@ -136,19 +137,17 @@ userSchema.methods = {
       view.relationship = this.friends.includes(id) ? 'friends' : null
 
       if (!view.relationship) {
-        this.madeRequests.forEach(({ id, receiver }) => {
+        this.madeRequests.forEach(({ receiver }) => {
           if (receiver.toString() === id) {
             view.relationship = 'requested'
-            view.requestId = id
           }
         })
       }
 
       if (!view.relationship) {
-        this.receivedRequests.forEach(({ id, author }) => {
+        this.receivedRequests.forEach(({ author }) => {
           if (author.toString() === id) {
             view.relationship = 'received'
-            view.requestId = id
           }
         })
       }

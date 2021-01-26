@@ -26,7 +26,7 @@ const friendRequestSchema = new Schema(
 
 friendRequestSchema.methods = {
   view(full) {
-    let fields = ['id']
+    let fields = ['id', 'author', 'receiver']
     const view = {}
 
     if (full) {
@@ -37,21 +37,9 @@ friendRequestSchema.methods = {
       view[field] = this[field]
     })
 
-    view.author = this.author.view()
-    view.receiver = this.receiver.view()
-
     return view
   }
 }
-
-friendRequestSchema.pre(/^find/, function (next) {
-  this.populate([
-    { path: 'author', select: 'id username picture' },
-    { path: 'receiver', select: 'id username picture' }
-  ])
-
-  next()
-})
 
 const model = mongoose.model('FriendRequest', friendRequestSchema)
 

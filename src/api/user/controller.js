@@ -18,10 +18,8 @@ export const index = ({ querymen: { query, select, cursor } }, res, next) =>
 export const show = ({ user, params: { username } }, res, next) =>
   User.findOne({ username: username === 'me' ? user.username : username })
     .then(notFound(res))
-    .then((user) =>
-      user
-        ? user.view(username === 'me', username === 'me' ? user.id : null)
-        : null
+    .then((requestedUser) =>
+      requestedUser ? requestedUser.view(username === 'me', user.id) : null
     )
     .then(success(res))
     .catch(next)
@@ -30,7 +28,7 @@ export const create = ({ bodymen: { body } }, res, next) =>
   User.create(body)
     .then((user) => {
       sign(user.id)
-        .then((token) => ({ token, user: user.view(true) }))
+        .then((token) => ({ token, user: user.view(true, user.id) }))
         .then(success(res, 201))
     })
     .catch((err) => {
@@ -95,7 +93,10 @@ export const updatePassword = (
 
 export const addFriend = async ({ user, params }, res, next) => {
   try {
-    const friendRequest = await FriendRequest.findById(params.id)
+    const friendRequest = await FriendRequest.findOne({
+      author: params.id,
+      receiver: user.id
+    })
     if (!friendRequest) {
       throw createError(400, 'Friendship request not found')
     }
