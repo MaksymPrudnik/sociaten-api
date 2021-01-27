@@ -61,7 +61,7 @@ export const feedByAuthor = async (
       {},
       { sort: '-createdAt' }
     )
-    const rows = posts.map((post) => post.view(false, profile.id))
+    const rows = posts.map((post) => post.view(false, id))
 
     return res.status(200).json({ count, rows })
   } catch (error) {

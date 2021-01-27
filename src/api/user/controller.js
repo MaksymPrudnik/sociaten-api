@@ -1,5 +1,5 @@
 import { success, notFound } from '../../services/response/'
-import { User } from '.'
+import User from './model'
 import { sign } from '../../services/jwt'
 import FriendRequest from '../friend-request/model'
 import createError from 'http-errors'
@@ -100,26 +100,43 @@ export const addFriend = async ({ user, params }, res, next) => {
     if (!friendRequest) {
       throw createError(400, 'Friendship request not found')
     }
+    const author = await User.findById(params.id)
+    if (!author) {
+      throw createError(400, 'Request author not found')
+    }
 
-    const isAdded = user.addFriend(friendRequest.receiver.id)
+    const isAdded =
+      (await user.addFriend(params.id)) && (await author.addFriend(user.id))
     if (!isAdded) {
       throw createError(500, 'Error adding friend')
     }
 
     await friendRequest.remove()
-    return res.status(200).json(user.view(true))
+    return res.status(200).end()
   } catch (error) {
     return next(error)
   }
 }
 
-export const removeFriend = ({ user, params }, res, next) =>
-  user
-    .removeFriend(params.id)
-    .then(notFound(res))
-    .then((isSuccessful) => (isSuccessful ? user.view(true) : null))
-    .then(success(res))
-    .catch(next)
+export const removeFriend = async ({ user, params }, res, next) => {
+  try {
+    const friend = await User.findById(params.id)
+    if (!friend) {
+      throw createError(404, 'Friend not found')
+    }
+
+    const isRemoved =
+      (await user.removeFriend(params.id)) &&
+      (await friend.removeFriend(user.id))
+    if (!isRemoved) {
+      throw createError(500, 'Error removing friend')
+    }
+
+    return res.status(200).end()
+  } catch (error) {
+    return next(error)
+  }
+}
 
 export const destroy = ({ params }, res, next) =>
   User.findById(params.id)

@@ -6,16 +6,6 @@ import { env } from '../../config'
 
 const roles = ['user', 'admin']
 
-const userRefSchema = new Schema(
-  {
-    type: Schema.ObjectId
-  },
-  {
-    _id: false,
-    autoIndex: false
-  }
-)
-
 const userSchema = new Schema(
   {
     email: {
@@ -57,7 +47,7 @@ const userSchema = new Schema(
       default:
         'https://images.unsplash.com/photo-1528722828814-77b9b83aafb2?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=1500&q=80'
     },
-    friends: [userRefSchema]
+    friends: [Schema.ObjectId]
   },
   {
     timestamps: true
@@ -137,17 +127,19 @@ userSchema.methods = {
       view.relationship = this.friends.includes(id) ? 'friends' : null
 
       if (!view.relationship) {
-        this.madeRequests.forEach(({ receiver }) => {
-          if (receiver.toString() === id) {
+        this.madeRequests.forEach((request) => {
+          if (request.receiver.toString() === id) {
             view.relationship = 'requested'
+            view.requestId = request.id
           }
         })
       }
 
       if (!view.relationship) {
-        this.receivedRequests.forEach(({ author }) => {
-          if (author.toString() === id) {
+        this.receivedRequests.forEach((request) => {
+          if (request.author.toString() === id) {
             view.relationship = 'received'
+            view.requestId = request.id
           }
         })
       }
@@ -162,23 +154,31 @@ userSchema.methods = {
   },
 
   async addFriend(id) {
-    const isAdded = !!this.friends.addToSet(id).length
+    try {
+      const isAdded = !!this.friends.addToSet(id).length
 
-    await this.save()
+      await this.save()
 
-    return isAdded
+      return isAdded
+    } catch {
+      return false
+    }
   },
 
   async removeFriend(id) {
-    if (!this.friend.includes(id)) {
+    try {
+      if (!this.friends.includes(id)) {
+        throw new Error()
+      }
+
+      this.friends = this.friends.filter((friend) => friend.toString() !== id)
+
+      await this.save()
+
+      return true
+    } catch {
       return false
     }
-
-    this.friends = this.friends.filter((friend) => friend !== id)
-
-    await this.save()
-
-    return true
   }
 }
 

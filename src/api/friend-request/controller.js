@@ -10,7 +10,6 @@ export const create = async ({ user, params: { receiver } }, res, next) => {
       createError(400, 'Requested user does not exist')
     }
 
-    console.log('user', receiverUser)
     const isRequestExist = !!(await FriendRequest.findOne({
       author: user.id,
       receiver
@@ -19,15 +18,12 @@ export const create = async ({ user, params: { receiver } }, res, next) => {
       throw createError(400, 'Such friend request already exist')
     }
 
-    const friendRequest = await FriendRequest.create({
+    await FriendRequest.create({
       receiver,
       author: user.id
     })
 
-    return res.status(201).json({
-      ...friendRequest.view(true),
-      receiverUsername: receiverUser.username
-    })
+    return res.status(201).end()
   } catch (error) {
     return next(error)
   }
