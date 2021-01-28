@@ -50,7 +50,13 @@ const userSchema = new Schema(
     friends: [Schema.ObjectId]
   },
   {
-    timestamps: true
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform: (obj, ret) => {
+        delete ret._id
+      }
+    }
   }
 )
 

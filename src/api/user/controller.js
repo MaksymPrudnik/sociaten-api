@@ -24,6 +24,27 @@ export const show = ({ user, params: { username } }, res, next) =>
     .then(success(res))
     .catch(next)
 
+export const showFriends = async ({ params: { username } }, res, next) => {
+  try {
+    const user = await User.findOne({ username })
+    if (!user) {
+      throw createError(404, 'User not found')
+    }
+
+    if (!user.friends.length) {
+      return res.status(200).json({ ids: [], rows: [] })
+    }
+
+    const rows = await User.find(
+      { _id: { $in: user.friends } },
+      { username: 1, picture: 1 }
+    )
+    return res.status(200).json({ ids: user.friends, rows })
+  } catch (error) {
+    return next(error)
+  }
+}
+
 export const create = ({ bodymen: { body } }, res, next) =>
   User.create(body)
     .then((user) => {

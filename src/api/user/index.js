@@ -11,7 +11,8 @@ import {
   updatePassword,
   destroy,
   addFriend,
-  removeFriend
+  removeFriend,
+  showFriends
 } from './controller'
 import { schema } from './model'
 export User, { schema } from './model'
@@ -36,11 +37,22 @@ router.get('/', token({ required: true, roles: ['admin'] }), query(), index)
  * @api {get} /users/:username Retrieve user
  * @apiName RetrieveUser
  * @apiGroup User
- * @apiPermission public
+ * @apiPermission user
  * @apiSuccess {Object} user User's data.
  * @apiError 404 User not found.
  */
 router.get('/:username', token({ required: true }), show)
+
+/**
+ * @api {get} /users/:username/friends Retrieve user's friends
+ * @apiName RetrieveUserFriends
+ * @apiGroup User
+ * @apiPermission user
+ * @apiSuccess {Number} count User's friends count.
+ * @apiSuccess {Object[]} rows User's friends data.
+ * @apiError 404 User not found.
+ */
+router.get('/:username/friends', token({ required: true }), showFriends)
 
 /**
  * @api {post} /users Create user
@@ -51,7 +63,7 @@ router.get('/:username', token({ required: true }), show)
  * @apiParam {String} [name] User's name.
  * @apiParam {String} [picture] User's picture.
  * @apiParam {String=user,admin} [role=user] User's role.
- * @apiSuccess (Sucess 201) {Object} user User's data.
+ * @apiSuccess (Success 201) {Object} user User's data.
  * @apiError {Object} 400 Some parameters may contain invalid values.
  * @apiError 401 Master access only.
  * @apiError 409 Email already registered.
