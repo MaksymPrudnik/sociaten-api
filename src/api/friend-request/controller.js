@@ -23,7 +23,9 @@ export const create = async ({ user, params: { receiver } }, res, next) => {
       author: user.id
     })
 
-    return res.status(201).end()
+    return res.status(201).json({
+      username: receiverUser.username
+    })
   } catch (error) {
     return next(error)
   }
@@ -87,10 +89,29 @@ export const show = ({ params }, res, next) =>
     .then(success(res))
     .catch(next)
 
-export const destroy = ({ user, params }, res, next) =>
-  FriendRequest.findById(params.id)
-    .then(notFound(res))
-    .then(authorOrAdmin(res, user, 'author'))
-    .then((friendRequest) => (friendRequest ? friendRequest.remove() : null))
-    .then(success(res, 204))
-    .catch(next)
+export const destroy = async ({ user, params }, res, next) => {
+  try {
+    const friendRequest = await FriendRequest.findById(params.id)
+    if (!friendRequest) {
+      throw createError(404, 'Friend request not found')
+    }
+
+    if (
+      user.role !== 'admin' &&
+      ![friendRequest.author, friendRequest.receiver].includes(user.id)
+    ) {
+      createError(401, 'Unauthorized')
+    }
+
+    const username =
+      user.id === friendRequest.author
+        ? (await User.findById(friendRequest.receiver)).username
+        : (await User.findById(friendRequest.author)).username
+
+    await friendRequest.remove()
+
+    return res.status(200).json({ username })
+  } catch (error) {
+    return next(error)
+  }
+}

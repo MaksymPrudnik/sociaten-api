@@ -133,7 +133,7 @@ export const addFriend = async ({ user, params }, res, next) => {
     }
 
     await friendRequest.remove()
-    return res.status(200).end()
+    return res.status(200).json({ username: author.username })
   } catch (error) {
     return next(error)
   }
@@ -153,7 +153,7 @@ export const removeFriend = async ({ user, params }, res, next) => {
       throw createError(500, 'Error removing friend')
     }
 
-    return res.status(200).end()
+    return res.status(200).json({ username: friend.username })
   } catch (error) {
     return next(error)
   }
